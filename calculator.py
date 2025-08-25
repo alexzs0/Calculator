@@ -140,5 +140,8 @@ class GUI():
         print(newNum)
 
         #Hello this is a github tests
-        print('Hello')        
+        print('Hello')      
+
+        #Second test for github 
+        print('Hello this is the second test')  
 run = GUI()
