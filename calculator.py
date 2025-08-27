@@ -1,6 +1,5 @@
 import tkinter as tk
 import re
-from math import sin
 #Setting the GUI up of title and the geometry
 class GUI():
     def __init__(self):
@@ -25,7 +24,7 @@ class GUI():
 
         self.btnClear = tk.Button(self.buttonFrame,text = 'AC', font = ('Arial', 18), command = self.clearField) #When command = lambda it means that it is only activated when clicked 
         self.btnClear.grid(column = 0, row = 0 ,sticky = 'snwe')
-        self.btnNeg_Pos = tk.Button(self.buttonFrame,text = '+/-', font = ('Arial', 18), command = self .invert) #When no brackets, only executes when pressed, with brackets program runs straight away 
+        self.btnNeg_Pos = tk.Button(self.buttonFrame,text = '+/-', font = ('Arial', 18), command = self.invert) #When no brackets, only executes when pressed, with brackets program runs straight away 
         self.btnNeg_Pos.grid(column = 1, row = 0 ,sticky = 'snwe')
         self.btnPercent = tk.Button(self.buttonFrame,text = '%', font = ('Arial', 18), command = lambda : self.addToField('%'))
         self.btnPercent.grid(column = 2, row = 0 ,sticky = 'snwe')
@@ -41,9 +40,9 @@ class GUI():
         self.btn0.grid(column = 0, row = 4 ,sticky = 'snwe')
         self.btnDot = tk.Button(self.buttonFrame,text = '.' , font = ('Arial', 18), command = lambda : self.addToField('.'))
         self.btnDot.grid(column = 1, row = 4 ,sticky = 'snwe')
-        self.btnsin = tk.Button(self.buttonFrame,text = 'sin' , font = ('Arial', 18),command = lambda : self.addToField('sin('))
-        self.btnsin.grid(column = 2, row = 4 ,sticky = 'snwe')
-        self.btnEqual = tk.Button(self.buttonFrame,text='=',font=('Arial', 18), command = lambda : self.calculate()) #Without paranthesis when you want to use it when called, with paranthesis when want to use it straight away 
+        self.btnbackSpace = tk.Button(self.buttonFrame,text = '<-' , font = ('Arial', 18), command = self.backSpace)
+        self.btnbackSpace.grid(column = 2, row = 4 ,sticky = 'snwe')
+        self.btnEqual = tk.Button(self.buttonFrame,text='=',font=('Arial', 18), command = self.calculate) #Without paranthesis when you want to use it when called/When the button is piushed, with paranthesis when want to use it straight away 
         self.btnEqual.grid(column=3, row=4, sticky='snwe')
 
        # Create buttons 1-9 in the same style as your equals button
@@ -64,7 +63,7 @@ class GUI():
         self.btn8 = tk.Button(self.buttonFrame,text='8',font=('Arial', 18),command=lambda: self.addToField('8'))
         self.btn8.grid(column=1, row=3, sticky='snwe')
         self.btn9 = tk.Button(self.buttonFrame , text='9',font=('Arial', 18),command=lambda: self.addToField('9'))
-        self.btn9.grid(column=2, row=3, sticky='snwe')
+        self.btn9.grid(column=2, row=3, sticky='snwe') #INFO Lambda is used when you need to pass in an aruguement to function
 
         self.buttonFrame.grid(column=0, row=1, sticky='snwe')
 
@@ -76,6 +75,16 @@ class GUI():
 
     def clearField(self):
         self.field.delete(1.0, tk.END)
+
+    def backSpace(self):
+        #Get position of the last character
+        end_pos = self.field.index(tk.END)
+        # Check if there is more than just the initial newline (meaning, actual text exists)
+        if end_pos != "1.1": 
+            # Calculate the position of the character to delete (2 positions before the END)
+            pos_to_delete = f"{end_pos} - 2 chars"
+            # Delete that single character
+            self.field.delete(pos_to_delete)
 
     def invert(self):
         #if these operations are in the filed, then we cannot invert 
@@ -96,9 +105,6 @@ class GUI():
             except ValueError:
                 # Handle case where field doesn't contain a valid number
                 print("Field doesn't contain a valid number")
-                    
-    def sin(self):
-        pass
 
     def calculate(self):
         #stores all the operators in a list
@@ -121,27 +127,72 @@ class GUI():
             allList.append(num)
 
         #Now we need to create a list with the numbers together
-        newNum = []
+        combineNum = []
         curNum = ''
         for i in range(len(allList)):
             #checks that i is not in the list
             if allList[i] not in ['/','+','-','x']:
                 curNum = curNum + allList[i] #appends the number
             else:
-                newNum.append(curNum)
+                combineNum.append(curNum)
                 curNum = ''
         #Gets the last digit
         if curNum != '':
-            newNum.append(curNum)
+            combineNum.append(curNum)
+        
+        #Checking if the equation can be done/no last number at the end
+        if len(operatorList) >= len(combineNum):
+            return 'ERROR can not perfrom this calculation'
+            
+        #First perform the division of the equation
+        updatedList = combineNum.copy() 
+        newOperatorList = operatorList.copy()
+        i = 0
+        while i < len(newOperatorList):
+            if newOperatorList[i] == '/':
+                #Calculates the answer 
+                answer = float(updatedList[i]) / float(updatedList[i+ 1])
+                updatedList[i] = answer
+                #Making sure we pop both updatedList and operatorList so it does not become out ofs index
+                updatedList.pop(i + 1)
+                newOperatorList.pop(i)
+            else:
+                #only increment when it does not have /
+                i += 1
+        
+        i = 0
+        while i < len(newOperatorList):
+            if newOperatorList[i] == 'x':
+                answer = float(updatedList[i]) * float(updatedList[i+1])
+                updatedList[i] = answer 
+                updatedList.pop(i + 1)
+                newOperatorList.pop(i)
+            else:
+                i += 1
+        
+        i = 0
+        while i < len(newOperatorList):
+            if newOperatorList[i] == '+':
+                answer = float(updatedList[i]) + float(updatedList[i+1])
+                updatedList[i] = answer 
+                updatedList.pop(i + 1)
+                newOperatorList.pop(i)
+            else:
+                i += 1
+        
+        i = 0
+        while i < len(newOperatorList):
+            if newOperatorList[i] == '-':
+                answer = float(updatedList[i]) - float(updatedList[i+1])
+                updatedList[i] = answer     
+                updatedList.pop(i + 1)
+                newOperatorList.pop(i)
+            else:
+                i += 1
+        finalAnswer = float(updatedList[0])
+        self.field.delete(1.0,tk.END)
+        self.field.insert(1.0,finalAnswer)
 
-        print(operatorList)
-        print(spanList)
-        print(allList)
-        print(newNum)
 
-        #Hello this is a github tests
-        print('Hello')      
 
-        #Second test for github 
-        print('Hello this is the second test')  
 run = GUI()
