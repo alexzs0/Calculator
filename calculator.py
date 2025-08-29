@@ -75,15 +75,18 @@ class GUI():
 
     def clearField(self):
         self.field.delete(1.0, tk.END)
-
+            
     def backSpace(self):
         #Get position of the last character
-        end_pos = self.field.index(tk.END)
+        end_pos = self.field.index(tk.END) #tk.END is actually one character after the last character
         # Check if there is more than just the initial newline (meaning, actual text exists)
-        if end_pos != "1.1": 
+        if end_pos != "1.1":  #starts newline at 1.0 therefore checks if 1.1 has text to see if able to delete
+            #The 1.1,1.2,1.3 represents the positions of the text
             # Calculate the position of the character to delete (2 positions before the END)
-            pos_to_delete = f"{end_pos} - 2 chars"
+            pos_to_delete = f"{end_pos} - 2 chars" #Gets the last elemment 
+            #-2 chars gets the actual last number, -1char gets the tk.END 
             # Delete that single character
+            #(1.0 , 20, 30 , tk.END , actualLast) , By subtracting 2 chars gets 30
             self.field.delete(pos_to_delete)
 
     def invert(self):
@@ -91,6 +94,7 @@ class GUI():
         opToExclude = ['+','x','/','%']
         current_text = self.field.get(1.0,tk.END).strip()
         run_invert = True
+        #We need to check if there is operation in the field if there is then it is not possible to revert the number
         for op in opToExclude:
             if op in current_text:
                 run_invert = False
@@ -111,16 +115,14 @@ class GUI():
         operatorList = []
         #Stores all the numbers in a list
         allList = []
-        #stores the span of the operators 
-        spanList = []
         #gets the field
         fieldOfText = self.field.get(1.0,tk.END).strip()
-        op_pattern = r'[^\d\s]' #Finds all things excluding the digits backspace s = whitespaces, backspace d is digits
+        #Finds all things excluding the digits backspace s = whitespaces, backspace d is digits
+        op_pattern = r'[^\d\s\.]' #Make sure to use \. which means we want to also exclude decimal points
 
         #Gets all the operators and adds it to a list 
         for operator in re.finditer(op_pattern,fieldOfText):
             operatorList.append(operator.group())
-            spanList.append(operator.span()[0])
 
         #Gets all the numbers string and add it to the list
         for num in fieldOfText:
@@ -131,23 +133,27 @@ class GUI():
         curNum = ''
         for i in range(len(allList)):
             #checks that i is not in the list
-            if allList[i] not in ['/','+','-','x']:
-                curNum = curNum + allList[i] #appends the number
+            if allList[i] not in ['/','+','-','x','%']:
+                curNum = curNum + allList[i] #Appending the number
             else:
                 combineNum.append(curNum)
                 curNum = ''
         #Gets the last digit
         if curNum != '':
             combineNum.append(curNum)
-        
-        #Checking if the equation can be done/no last number at the end
-        if len(operatorList) >= len(combineNum):
-            return 'ERROR can not perfrom this calculation'
-            
         #First perform the division of the equation
         updatedList = combineNum.copy() 
         newOperatorList = operatorList.copy()
         i = 0
+        #Working out the percent 
+        while i < len(newOperatorList):
+            if newOperatorList[i] == '%':
+                answer = float(updatedList[i]) / 100
+                updatedList[i] = answer
+                newOperatorList.pop(i)
+            else:
+                i += 1
+
         while i < len(newOperatorList):
             if newOperatorList[i] == '/':
                 #Calculates the answer 
@@ -189,10 +195,11 @@ class GUI():
                 newOperatorList.pop(i)
             else:
                 i += 1
+
+        #Displaying the final answer to the field
         finalAnswer = float(updatedList[0])
         self.field.delete(1.0,tk.END)
         self.field.insert(1.0,finalAnswer)
-
 
 
 run = GUI()
